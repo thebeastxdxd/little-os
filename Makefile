@@ -1,9 +1,12 @@
-TARGET = myos.bin
-TARGET_ISO = $(TARGET:%.bin=%.iso)
-CC = i686-elf-gcc
-ASM = i686-elf-as
-LINKER = i686-elf-gcc
-SHELL ::=/bin/bash
+ARCH ?= x86_64
+KERNEL = myos-$(ARCH).bin
+ISO = $(KERNEL:%.bin=%.iso)
+CC = x86_64-elf-gcc
+ASM = x86_64-elf-as
+NASM = nasm
+LD = x86_64-elf-ld
+QEMU = qemu-system-x86_64
+SHELL :=/bin/bash
 
 SRCDIR = src
 BINDIR = bin
@@ -17,24 +20,29 @@ LD_SCRIPT := $(SRCDIR)/linker.ld
 OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 ASM_OBJ := $(ASM_SRC:$(SRCDIR)/%.s=$(OBJDIR)/%.o)
 
-CFLAGS := -ffreestanding -O2 
+CFLAGS := -Wall -Wextra -std=gnu99 -pedantic -O2 -ffreestanding -nostdlib \
+		-fno-builtin -fstack-protector -mno-red-zone -mno-sse2 -fno-omit-frame-pointer 
 
 .PHONY: all
-all:  $(BINDIR)/$(TARGET)
-	@echo multiboot state is $(shell grub-file --is-x86-multiboot $(BINDIR)/$(TARGET); echo $$?)
-	cp $(BINDIR)/$(TARGET) $(ISODIR)/boot/$(TARGET)
-	grub-mkrescue -o $(TARGET_ISO) $(ISODIR)
+all:  $(BINDIR)/$(KERNEL)
+	@echo multiboot state is $(shell grub-file --is-x86-multiboot2 $(BINDIR)/$(KERNEL); echo $$?)
+	cp $(BINDIR)/$(KERNEL) $(ISODIR)/boot/$(KERNEL)
+	grub-mkrescue -o $(ISO) $(ISODIR)
 
-$(BINDIR)/$(TARGET): $(OBJECTS) $(ASM_OBJ) $(INCLUDES)
-	$(LINKER) -T $(LD_SCRIPT) -o $@ $(CFLAGS) -nostdlib $^ -lgcc
+$(BINDIR)/$(KERNEL): $(OBJECTS) $(ASM_OBJ) $(INCLUDES)
+	$(LD) --nmagic --output=$@ -T $(LD_SCRIPT) $^
 
 $(ASM_OBJ): $(OBJDIR)/%.o : $(SRCDIR)/%.s
-	$(ASM) $< -o $@
+	$(NASM) -f elf64 $< -o $@
 	
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	$(CC) -c $< -o $@ $(CFLAGS) -std=gnu99 -Wall -Wextra
+	$(CC) -c $< -o $@ $(CFLAGS) 
 
 .PHONY: clean
 clean:
-	rm -rf $(BINDIR)/$(TARGET) $(ASM_OBJ) $(OBJECTS)
+	rm -rf $(BINDIR)/$(KERNEL) $(ASM_OBJ) $(OBJECTS) $(ISO)
+
+.PHONY: run
+run: $(ISO)
+	$(QEMU) -cdrom $< 
 	
