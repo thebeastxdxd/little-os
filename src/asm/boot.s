@@ -51,7 +51,52 @@ start:
 	; preserved and the call is well defined.
 	; note, that if you are building on Windows, C functions may have "_" prefix in assembly: _kernel_main
 	call check_multiboot
-	extern kernel_main
+    call detect_long_mode
+    call init_pt_protected 
+    call enable_paging
+    ; We are now in long mode!
+    ; But we are in 32-bit compatibility submode and we want to enter 64-bit long mode.
+    ; To do the we need to load a GDT with the 64-bit flags set in the code and data selectors.
+
+    lgdt [gdt_64_descriptor]
+    jmp kernel_code_seg_64:init_lm
+
+; --------------------------------------------------------------------------------------------
+bits 32
+%define MULTIBOOT2_MAGIC_VALUE 0x36d76289
+
+check_multiboot:
+	cmp eax, MULTIBOOT2_MAGIC_VALUE
+	jne .no_multiboot
+	ret
+
+.no_multiboot:
+	mov al, "0"
+	jmp error
+
+; --------------------------------------------------------------------------------------------
+; Includes
+%include "src/asm/elevate.s"
+%include "src/asm/gdt.s"
+%include "src/asm/init_pt.s"
+%include "src/asm/long_mode.s" ; also includes error.s
+
+; --------------------------------------------------------------------------------------------
+; 64-bit code below
+extern kernel_main
+
+section .text
+bits 64
+
+init_lm:
+
+    cli 
+    mov ax, kernel_data_seg_64
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
 	call kernel_main
  
 	; If the system has nothing more to do, put the computer into an
@@ -68,29 +113,3 @@ start:
 .hang:	hlt
 	jmp .hang
 .end:
-
-; --------------------------------------------------------------------------------------------
-%define MULTIBOOT2_MAGIC_VALUE 0x36d76289
-
-check_multiboot:
-	cmp eax, MULTIBOOT2_MAGIC_VALUE
-	jne .no_multiboot
-	ret
-.no_multiboot:
-	mov al, "0"
-	jmp error
-
-; --------------------------------------------------------------------------------------------
-; Prints `ERR: ` and the given error code to screen and hangs.
-;
-; Parameter: error code (in ascii) in al
-;
-; 0 = no multiboot
-; 1 =
-; 2 =
-error:
-	mov dword [0xb8000], 0x4f524f45
-	mov dword [0xb8004], 0x4f3a4f52
-	mov dword [0xb8008], 0x4f204f20
-	mov byte  [0xb800a], al
-	hlt 
