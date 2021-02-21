@@ -60,6 +60,9 @@ start:
 
     lgdt [gdt_64_descriptor]
     jmp kernel_code_seg_64:init_lm
+    
+    ; should never be reached
+    hlt
 
 ; --------------------------------------------------------------------------------------------
 bits 32
@@ -97,6 +100,7 @@ init_lm:
     mov fs, ax
     mov gs, ax
     mov ss, ax
+
 	call kernel_main
  
 	; If the system has nothing more to do, put the computer into an

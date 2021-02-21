@@ -23,13 +23,15 @@ ASM_OBJ := $(ASM_SRC:$(ASMDIR)/%.s=$(OBJDIR)/%.o)
 
 CFLAGS := -Wall -Wextra -std=gnu99 -pedantic -O2 -MD -ffreestanding -nostdlib -lgcc \
 		-fno-builtin -fstack-protector -mno-red-zone -mno-sse2 -fno-omit-frame-pointer
+
+DEBUG_CFLAGS := -DENABLE_KERNEL_DEBUG
+
 QEMU_OPTIONS = -m 500M \
 
-.PHONY: all
-all:  $(BINDIR)/$(KERNEL)
+$(ISO):  $(BINDIR)/$(KERNEL)
 	@echo multiboot state is $(shell grub-file --is-x86-multiboot2 $(BINDIR)/$(KERNEL); echo $$?)
 	cp $(BINDIR)/$(KERNEL) $(ISODIR)/boot/$(KERNEL)
-	grub-mkrescue -o $(ISO) $(ISODIR)
+	grub-mkrescue -o $@ $(ISODIR)
 
 $(BINDIR)/$(KERNEL): $(OBJECTS) $(ASM_OBJ) 
 	$(LD) --nmagic --output=$@ -T $(LD_SCRIPT) $^
@@ -47,7 +49,24 @@ clean:
 	rm -rf $(BINDIR)/$(KERNEL) $(ASM_OBJ) $(OBJECTS) $(ISO)
 	rm -rf $(OBJECTS:.o=.d)
 
-.PHONY: run
+fmt: 
+	find . -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format -style=file -i "{}" ";"
+.PHONY: fmt
+
+iso: ## build the image of the OS (.iso)
+iso: $(ISO)
+.PHONY: iso
+
+run: ## run the OS in release mode
 run: $(ISO)
 	$(QEMU) -cdrom $< -serial file:./log/debug.log -d int --no-reboot
-	
+.PHONY: run
+
+debug: ## build the os in debug mode
+debug: CFLAGS += $(DEBUG_CFLAGS)
+debug: $(ISO)
+.PHONY: debug
+
+run-debug: ## run the OS in debug mode
+run-debug: debug
+	$(QEMU) -cdrom $< -serial file:./log/debug.log -d int --no-reboot

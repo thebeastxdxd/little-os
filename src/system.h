@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -10,5 +11,7 @@ uint16_t* memsetw(uint16_t* dest, uint16_t val, size_t count);
 size_t strlen(const char* str);
 uint8_t inportb(uint16_t _port);
 void outportb(uint16_t _port, uint8_t _data);
+char* reverse_str(char* buf);
+char* itoa_base10(int val, char* buf);
 
 #endif

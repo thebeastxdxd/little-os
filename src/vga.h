@@ -1,6 +1,7 @@
 #ifndef __VGA_H__
 #define __VGA_H__
 
+#include "printf.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -10,7 +11,7 @@
 enum vga_color {
     VGA_COLOR_BLACK = 0,
     VGA_COLOR_BLUE = 1,
-    VGA_COLOR_GREEN =  2,
+    VGA_COLOR_GREEN = 2,
     VGA_COLOR_CYAN = 3,
     VGA_COLOR_RED = 4,
     VGA_COLOR_MAGENTA = 5,
@@ -31,21 +32,23 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
 }
 
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
-    return (uint16_t) uc | (uint16_t) color << 8;
+    return (uint16_t)uc | (uint16_t)color << 8;
 }
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
+uint8_t terminal_row;
+uint8_t terminal_column;
 uint16_t* terminal_buffer;
+uint8_t terminal_color;
 
 void terminal_initialize(void);
 void terminal_clear(void);
 void terminal_setcolor(uint8_t color);
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
+void scroll(void);
+void move_csr(uint8_t x, uint8_t y);
+void terminal_putentryat(char c, uint8_t color, uint8_t x, uint8_t y);
 void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
