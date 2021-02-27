@@ -1,6 +1,7 @@
 #include "system.h"
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 uint8_t* memcpy(uint8_t* dest, uint8_t* src, size_t count) {
 
@@ -43,7 +44,7 @@ size_t strlen(const char* str) {
     return len;
 }
 
-uint8_t inportb(uint16_t _port) {
+uint8_t inb(uint16_t _port) {
 
     uint8_t rv;
     __asm__ __volatile__("inb %[port], %[rv]"
@@ -52,11 +53,20 @@ uint8_t inportb(uint16_t _port) {
     return rv;
 }
 
-void outportb(uint16_t _port, uint8_t _data) {
+void outb(uint16_t _port, uint8_t _data) {
 
     __asm__ __volatile__("outb %[data], %[port]"
                          :
                          : [port] "dN"(_port), [data] "a"(_data));
+}
+
+bool are_interrupts_enabled() {
+    
+    unsigned long flags;
+    __asm__ __volatile__ ( "pushf\n\t"
+                           "pop %0"
+                           : "=g" (flags));
+    return flags & (1 << 9);
 }
 
 char* reverse_str(char* buf) {

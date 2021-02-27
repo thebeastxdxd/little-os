@@ -14,6 +14,15 @@
             jmp  common_interrupt_handler
 %endmacro
 
+%macro def_irq_handler 1
+    global irq%1
+    irq%1:
+        cli
+        push qword 0
+        push qword (32 + %1)
+        jmp common_irq_handler
+%endmacro
+
 %macro save_registers 0
   push rax
   push rbx
@@ -60,6 +69,17 @@ common_interrupt_handler:
 	sti
     iretq
 
+common_irq_handler:
+    save_registers
+    extern irq_handler
+    call irq_handler
+    restore_registers
+    ; pop dummy error code
+    add rsp, 16
+    sti
+    iretq
+
+
 ; We need to make our procedures global
 ; So it became available in isr.c file for setting the gates
 no_error_code_interrupt_handler 0
@@ -96,3 +116,17 @@ no_error_code_interrupt_handler 29
 no_error_code_interrupt_handler 30
 no_error_code_interrupt_handler 31
 
+; hadware interrupts
+def_irq_handler 0
+def_irq_handler 1
+def_irq_handler 2
+def_irq_handler 3
+def_irq_handler 4
+def_irq_handler 5
+def_irq_handler 6
+def_irq_handler 7
+def_irq_handler 8
+def_irq_handler 9
+def_irq_handler 10
+def_irq_handler 11
+def_irq_handler 12

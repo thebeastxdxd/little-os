@@ -20,10 +20,10 @@ void terminal_setcolor(uint8_t color) { terminal_color = color; }
 
 void move_csr(uint8_t x, uint8_t y) {
     const uint16_t index = (y * VGA_WIDTH) + x;
-    outportb(0x3D4, 14);
-    outportb(0x3D5, index >> 8);
-    outportb(0x3D4, 15);
-    outportb(0x3D5, index);
+    outb(0x3D4, 14);
+    outb(0x3D5, index >> 8);
+    outb(0x3D4, 15);
+    outb(0x3D5, index);
 }
 
 void scroll(void) {
@@ -33,12 +33,12 @@ void scroll(void) {
         temp = terminal_row - VGA_HEIGHT + 1;
         // shift the terminal one row up
         memcpy((uint8_t*)terminal_buffer,
-               (uint8_t*)terminal_buffer + (temp * VGA_WIDTH),
+               (uint8_t*)terminal_buffer + (temp * VGA_WIDTH * 2),
                (VGA_HEIGHT - temp) * VGA_WIDTH * 2);
         // blank the last line
         memsetw(terminal_buffer + ((VGA_HEIGHT - temp) * VGA_WIDTH),
                 vga_entry(' ', terminal_color), VGA_WIDTH);
-        terminal_column = VGA_HEIGHT - 1;
+        terminal_row = VGA_HEIGHT - temp;
     }
 }
 

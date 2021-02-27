@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define IRQ_BASE 0x20
+
 // exceptions, cf. http://wiki.osdev.org/Exceptions
 #define EXCEPTION_DE 0
 #define EXCEPTION_DB 1
@@ -20,6 +22,22 @@
 // 15 is "reserved"
 #define EXCEPTION_MF 16
 #define EXCEPTION_AC 17
+
+// Hardware interrupts
+#define IRQ0  32
+#define IRQ1  33
+#define IRQ2  34
+#define IRQ3  35
+#define IRQ4  36
+#define IRQ5  37
+#define IRQ6  38
+#define IRQ7  39
+#define IRQ8  40
+#define IRQ9  41
+#define IRQ10 42
+#define IRQ11 43
+#define IRQ12 44
+
 
 // These functions are declared in the 'isr.asm' file
 extern void interrupt_handler_0();
@@ -55,6 +73,21 @@ extern void interrupt_handler_28();
 extern void interrupt_handler_29();
 extern void interrupt_handler_30();
 extern void interrupt_handler_31();
+
+// Hardware intterupts
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
 
 typedef struct {
     uint64_t r15;
@@ -113,6 +146,8 @@ void isr_disable_interrupts();
  * @param s the interrupt stack
  */
 void isr_int_handler(isr_stack_t s) __asm__("isr_handler");
+
+void isr_irq_handler(isr_stack_t s) __asm__("irq_handler");
 
 /**
  * Registers a handler for a given interrupt. It does not matter whether the

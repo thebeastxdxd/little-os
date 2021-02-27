@@ -22,7 +22,7 @@ void idt_register_gate(uint16_t n, uint64_t handler, uint8_t type,
     idt[n].dpl = dpl;
     idt[n].present = 1;
 
-    //DEBUG("IDT REGISTERED GATE -> vect num: %d, handler: %p\n", n, handler);
+    DEBUG("IDT REGISTERED GATE -> vect num: %d, handler: %p", n, handler);
 }
 
 void idt_register_interrupt(uint16_t n, uint64_t handler) {
